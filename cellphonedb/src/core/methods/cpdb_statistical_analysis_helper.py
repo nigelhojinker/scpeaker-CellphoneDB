@@ -117,7 +117,7 @@ def trimean_cluster_means(counts_values, codes, cluster_names, index):
     q1, q2, q3 = np.percentile(sub, [25, 50, 75], axis = 1)
     out[:, k] = (q1 + 2*q2 + q3) / 4.0
     
-  return pd.Dataframe(
+  return pd.DataFrame(
     out,
     index = index,
     columns = cluster_names.to_list()
