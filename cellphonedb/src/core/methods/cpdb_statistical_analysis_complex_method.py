@@ -27,6 +27,7 @@ def call(meta: pd.DataFrame,
          result_precision: int = 3,
          debug: bool = False,
          output_path: str = '',
+         avg_method: str = "thresholdedMean"
          ) -> dict:
     analysis_result = {}
     core_logger.info(
@@ -61,9 +62,11 @@ def call(meta: pd.DataFrame,
 
     complex_to_protein_row_ids = complex_helper.map_complex_to_protein_row_ids(complex_composition_filtered,
                                                                                counts_filtered)
-    clusters = cpdb_statistical_analysis_helper.build_clusters(meta, counts_filtered,
+    clusters = cpdb_statistical_analysis_helper.build_clusters(meta, 
+                                                               counts_filtered,
                                                                complex_to_protein_row_ids,
-                                                               skip_percent=False)
+                                                               skip_percent=False,
+                                                               avg_method = avg_method)
     core_logger.info('Running Real Analysis')
     cluster_combinations = cpdb_statistical_analysis_helper.get_cluster_combinations(clusters['names'], microenvs)
     base_result = cpdb_statistical_analysis_helper.build_result_matrix(interactions_filtered,
@@ -90,7 +93,8 @@ def call(meta: pd.DataFrame,
                                                                                    complex_to_protein_row_ids,
                                                                                    real_mean_analysis,
                                                                                    threads,
-                                                                                   separator)
+                                                                                   separator,
+                                                                                   avg_method = avg_method)
 
     result_percent = cpdb_statistical_analysis_helper.build_percent_result(real_mean_analysis,
                                                                            real_percents_analysis,
