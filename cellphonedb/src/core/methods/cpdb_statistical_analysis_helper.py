@@ -107,7 +107,7 @@ def trimean_cluster_means(counts_values, codes, cluster_names, index):
   """
   n_clusters = len(cluster_names)
 
-  out = np.zeros( (counts_values.shape()[0], n_clusters), dtype = np.float32)
+  out = np.zeros( (counts_values.shape[0], n_clusters), dtype = np.float32)
 
   for k in range(n_clusters):
     mask = (codes == k)
