@@ -97,11 +97,39 @@ def shuffle_meta(meta: pd.DataFrame) -> pd.DataFrame:
 
     return meta_copy
 
+## ADDED FUNCTION ##
+def trimean_cluster_means(counts_values, codes, cluster_names, index):
+  """
+  counts_values: np.ndarray (n_genes, n_cells)
+  codes: np.ndarray (n_cells, ) integer values for each cell type cluster
+  cluster_names: pandas Index or list (length = n_clusters)
+  index: pandas Index (counts.index; id_multidata)
+  """
+  n_clusters = len(cluster_names)
+
+  out = np.zeros( (counts_values.shape()[0], n_clusters), dtype = np.float32)
+
+  for k in range(n_clusters):
+    mask = (codes == k)
+    if not mask.any():
+      continue
+    sub = counts_values[:, mask]
+    q1, q2, q3 = np.percentile(sub, [25, 50, 75], axis = 1)
+    out[:, k] = (q1 + 2*q2 + q3) / 4.0
+    
+  return pd.Dataframe(
+    out,
+    index = index,
+    columns = cluster_names.to_list()
+  )
+####
+
 
 def build_clusters(meta: pd.DataFrame,
                    counts: pd.DataFrame,
                    complex_to_protein_row_ids: dict,
-                   skip_percent: bool) -> dict:
+                   skip_percent: bool,
+                   avg_method: str = "thresholdedMean") -> dict:
     """
     Builds a cluster structure and calculates the means values.
 
@@ -135,11 +163,17 @@ def build_clusters(meta: pd.DataFrame,
     cluster_names = meta[CELL_TYPE].cat.categories
     codes = meta[CELL_TYPE].cat.codes
 
-    cluster_means = pd.DataFrame(
+    if avg_method == "thresholdedMean":
+      cluster_means = pd.DataFrame(
         npg.aggregate(codes, counts.values, func='mean', axis=1),
         index=counts.index,
         columns=cluster_names.to_list()
     )
+    elif avg_method == "triMean":
+      cluster_means = trimean_cluster_means(counts.values, codes, cluster_names, counts.index)
+    else:
+      raise ValueError(f"Unknown avg_method: {avg_method}. Use either thresholdedMean or triMean.")
+      
     if not skip_percent:
         cluster_pcts = pd.DataFrame(
             npg.aggregate(meta[CELL_TYPE].cat.codes, (counts > 0).astype(int).values, func='mean', axis=1),
@@ -465,7 +499,8 @@ def shuffled_analysis(iterations: int,
                       complex_to_protein_ids: dict,
                       real_mean_analysis: pd.DataFrame,
                       threads: int,
-                      separator: str) -> list:
+                      separator: str,
+                      avg_method: str = "thresholdedMean") -> list:
     """
     Shuffles meta and calculates the means for each and saves it in a list.
 
@@ -485,7 +520,8 @@ def shuffled_analysis(iterations: int,
                                            complex_to_protein_ids,
                                            separator,
                                            real_mean_analysis,
-                                           i)
+                                           i,
+                                           avg_method = avg_method)
 
             if i % progress_step == 0:
                 # Poor man's progress reporting
@@ -500,7 +536,8 @@ def shuffled_analysis(iterations: int,
                                                   meta,
                                                   complex_to_protein_ids,
                                                   separator,
-                                                  real_mean_analysis)
+                                                  real_mean_analysis,
+                                                 avg_method = avg_method)
             for result in tqdm(pool.imap(statistical_analysis_thread, range(iterations)),
                                total=iterations):
                 results.append(result)
@@ -514,7 +551,8 @@ def _statistical_analysis(cluster_combinations,
                           complex_to_protein_ids: dict,
                           separator,
                           real_mean_analysis: pd.DataFrame,
-                          iteration_number) -> pd.DataFrame:
+                          iteration_number,
+                          avg_method: str = "thresholdedMean") -> pd.DataFrame:
     """
     Shuffles meta dataset and calculates the means
     """
@@ -522,7 +560,8 @@ def _statistical_analysis(cluster_combinations,
     shuffled_clusters = build_clusters(shuffled_meta,
                                        counts,
                                        complex_to_protein_ids,
-                                       skip_percent=True)
+                                       skip_percent=True,
+                                       avg_method = avg_method)
 
     shuffled_mean_analysis = mean_analysis(interactions,
                                            shuffled_clusters,
