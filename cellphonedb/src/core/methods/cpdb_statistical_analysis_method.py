@@ -25,7 +25,8 @@ def call(cpdb_file_path: str = None,
          separator: str = '|',
          debug: bool = False,
          output_suffix: str = None,
-         score_interactions: bool = False
+         score_interactions: bool = False,
+         avg_method: str = "thresholdedMean" # added parameter
          ) -> dict:
     """Statistical method for analysis
 
@@ -80,6 +81,11 @@ def call(cpdb_file_path: str = None,
          Suffix to append to the result file's name (if not provided, timestamp will be used)
     score_interactions: bool
         If True, CellphoneDB interactions will be scored per cell type pair, and returned in interaction_scores_dict
+     ## ADDED PARAMETER ##
+     avg_method: str 
+         "thresholdedMean" for CellPhoneDB default method for calculating average gene expression per cell cluster
+         "triMean" for CellChat-inspired method for calculating average gene expression per cell cluster
+         
      Returns
      -------
      Dict with the following keys:
@@ -142,7 +148,8 @@ def call(cpdb_file_path: str = None,
                                                                     debug_seed,
                                                                     result_precision,
                                                                     debug,
-                                                                    output_path
+                                                                    output_path,
+                                                                    avg_method = avg_method
                                                                     )
 
     significant_means = analysis_result['significant_means']
