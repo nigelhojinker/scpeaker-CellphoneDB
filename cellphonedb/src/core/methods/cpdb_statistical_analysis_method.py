@@ -3,6 +3,7 @@ from cellphonedb.src.core.methods import cpdb_statistical_analysis_complex_metho
 from cellphonedb.src.core.exceptions.MissingRequiredArgumentsException import MissingRequiredArgumentsException
 from cellphonedb.utils import db_utils, file_utils, scoring_utils
 from cellphonedb.src.core.utils import subsampler
+from cellphonedb.src.core.core_logger import core_logger
 
 
 def call(cpdb_file_path: str = None,
@@ -128,6 +129,10 @@ def call(cpdb_file_path: str = None,
         ss = subsampler.Subsampler(log=subsampling_log, num_pc=subsampling_num_pc,
                                    num_cells=subsampling_num_cells, verbose=False, debug_seed=None)
         counts = ss.subsample(counts)
+             
+     if avg_method == "triMean" and threshold != 0:
+        core_logger.info('type = triMean: Setting threshold to 0.')
+        threshold = 0
 
     analysis_result = cpdb_statistical_analysis_complex_method.call(meta.copy(),
                                                                     counts,
