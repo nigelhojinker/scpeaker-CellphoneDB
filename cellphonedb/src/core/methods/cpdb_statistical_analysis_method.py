@@ -130,7 +130,7 @@ def call(cpdb_file_path: str = None,
                                    num_cells=subsampling_num_cells, verbose=False, debug_seed=None)
         counts = ss.subsample(counts)
              
-     if avg_method == "triMean" and threshold != 0:
+    if avg_method == "triMean" and threshold != 0:              
         core_logger.info('type = triMean: Setting threshold to 0.')
         threshold = 0
 
